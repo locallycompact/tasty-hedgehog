@@ -147,7 +147,7 @@ propertyTestLimit =
 reportToProgress :: PropertyConfig
                  -> Report Progress
                  -> T.Progress
-reportToProgress config (Report testsDone _ _ status) =
+reportToProgress config (Report testsDone _ _ _ status) =
   let
     TestLimit testLimit = propertyTestLimit config
     ShrinkLimit shrinkLimit = propertyShrinkLimit config
@@ -168,19 +168,7 @@ reportOutput :: Bool
 reportOutput showReplay useColor name report = do
   s <- renderResult useColor name report
   pure $ case reportStatus report of
-    Failed fr ->
-      let
-        size = failureSize fr
-        seed = failureSeed fr
-        replayStr =
-          if showReplay
-          then
-            "\nUse '--hedgehog-replay \"" ++
-            show size ++ " " ++ show seed ++
-            "\"' to reproduce."
-          else ""
-      in
-        s ++ replayStr ++ "\n"
+    Failed fr -> s
     _ -> s
 
 instance T.IsTest HP where
@@ -208,6 +196,7 @@ instance T.IsTest HP where
           (fromMaybe (propertyShrinkLimit pConfig) mShrinks)
           (fromMaybe (propertyShrinkRetries pConfig) mRetries)
           (NoConfidenceTermination $ fromMaybe (propertyTestLimit pConfig) mTests)
+          Nothing
 
     randSeed <- Seed.random
     let
